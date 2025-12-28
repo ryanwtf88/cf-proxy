@@ -1,0 +1,24 @@
+{
+  "name": "cf-proxy",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "ts-node src/index.ts",
+    "start:pm2": "pm2 start dist/index.js --name cf-proxy",
+    "stop:pm2": "pm2 stop cf-proxy",
+    "dev": "nodemon src/index.ts"
+  },
+  "keywords": [],
+  "author": "RY4N",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@types/node": "^25.0.3",
+    "dotenv": "^17.2.3",
+    "nodemon": "^3.1.11",
+    "pm2": "^6.0.14",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}

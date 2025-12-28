@@ -1,0 +1,8 @@
+services:
+  cf-proxy:
+    build: .
+    ports:
+      - "1080:1080"
+    volumes:
+      - ./.env:/app/.env
+    restart: always
