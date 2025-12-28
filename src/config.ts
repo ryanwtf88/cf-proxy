@@ -5,5 +5,6 @@ export const config = {
     PORT: process.env.PORT ? parseInt(process.env.PORT) : 1080,
     HOST: process.env.HOST || '0.0.0.0',
     USERNAME: process.env.PROXY_USERNAME,
-    PASSWORD: process.env.PROXY_PASSWORD
+    PASSWORD: process.env.PROXY_PASSWORD,
+    WORKER_URL: process.env.WORKER_URL
 };

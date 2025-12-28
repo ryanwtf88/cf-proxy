@@ -1,6 +1,8 @@
 import { Socket } from 'net';
 import { config } from './config';
 import net from 'net';
+import WebSocket from 'ws';
+import { createWebSocketStream } from 'ws';
 
 export function handleHttpProxy(socket: Socket, data: Buffer) {
     const dataStr = data.toString();
@@ -38,17 +40,36 @@ export function handleHttpProxy(socket: Socket, data: Buffer) {
             }
         }
 
-        const serverConn = net.createConnection(port, host, () => {
-            socket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
-            serverConn.pipe(socket);
-            socket.pipe(serverConn);
-        });
+        if (config.WORKER_URL) {
+            console.log(`[HTTP] Tunneling to ${host}:${port} via Worker`);
+            const wsUrl = `${config.WORKER_URL}?target=${host}:${port}`;
+            const ws = new WebSocket(wsUrl);
+            const wsStream = createWebSocketStream(ws);
 
-        serverConn.on('error', (err) => {
-            console.error(`[HTTP] Error connecting to ${host}:${port}`, err.message);
-            try { socket.write('HTTP/1.1 502 Bad Gateway\r\n\r\n'); } catch (e) { }
-            socket.end();
-        });
+            ws.on('open', () => {
+                socket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
+                wsStream.pipe(socket);
+                socket.pipe(wsStream);
+            });
+
+            ws.on('error', (err) => {
+                console.error(`[HTTP] Worker error connecting to ${host}:${port}`, err.message);
+                try { socket.write('HTTP/1.1 502 Bad Gateway\r\n\r\n'); } catch (e) { }
+                socket.end();
+            });
+        } else {
+            const serverConn = net.createConnection(port, host, () => {
+                socket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
+                serverConn.pipe(socket);
+                socket.pipe(serverConn);
+            });
+
+            serverConn.on('error', (err) => {
+                console.error(`[HTTP] Error connecting to ${host}:${port}`, err.message);
+                try { socket.write('HTTP/1.1 502 Bad Gateway\r\n\r\n'); } catch (e) { }
+                socket.end();
+            });
+        }
 
     } else {
         // Simple HTTP forward proxy
@@ -63,16 +84,36 @@ export function handleHttpProxy(socket: Socket, data: Buffer) {
 
             console.log(`[HTTP] Proxying ${method} ${url}`);
 
-            const serverConn = net.createConnection(port, host, () => {
-                serverConn.write(data);
-                serverConn.pipe(socket);
-                socket.pipe(serverConn);
-            });
+            if (config.WORKER_URL) {
+                console.log(`[HTTP] Tunneling to ${host}:${port} via Worker`);
+                const wsUrl = `${config.WORKER_URL}?target=${host}:${port}`;
+                const ws = new WebSocket(wsUrl);
+                const wsStream = createWebSocketStream(ws);
 
-            serverConn.on('error', (err) => {
-                console.error(`[HTTP] Error proxying to ${host}:${port}`, err.message);
-                socket.end();
-            });
+                ws.on('open', () => {
+                    // We don't need to write 'Connection Established' for standard HTTP proxy
+                    // just pipe the request data
+                    wsStream.write(data);
+                    wsStream.pipe(socket);
+                    socket.pipe(wsStream);
+                });
+
+                ws.on('error', (err) => {
+                    console.error(`[HTTP] Worker error connecting to ${host}:${port}`, err.message);
+                    socket.end();
+                });
+            } else {
+                const serverConn = net.createConnection(port, host, () => {
+                    serverConn.write(data);
+                    serverConn.pipe(socket);
+                    socket.pipe(serverConn);
+                });
+
+                serverConn.on('error', (err) => {
+                    console.error(`[HTTP] Error proxying to ${host}:${port}`, err.message);
+                    socket.end();
+                });
+            }
 
         } catch (e) {
             console.error('[HTTP] Invalid URL or request:', requestLine);

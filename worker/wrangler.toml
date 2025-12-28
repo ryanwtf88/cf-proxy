@@ -1,0 +1,7 @@
+name = "cf-proxy-worker"
+main = "src/index.ts"
+compatibility_date = "2023-12-01"
+account_id = "cd4ab75cca150f63177325a6bb1c355f"
+
+[triggers]
+crons = []

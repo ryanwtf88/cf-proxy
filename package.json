@@ -19,6 +19,11 @@
     "nodemon": "^3.1.11",
     "pm2": "^6.0.14",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.1",
+    "wrangler": "^2.21.3"
   }
 }
