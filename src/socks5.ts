@@ -111,10 +111,11 @@ function handleRequest(socket: Socket, data: Buffer) {
     port = data.readUInt16BE(addrOffset);
 
     const net = require('net');
+    const workerUrl = config.WORKER_URL ? config.WORKER_URL.replace(/\/$/, '') : null;
 
-    if (config.WORKER_URL) {
+    if (workerUrl) {
         console.log(`[SOCKS5] Tunneling to ${addr}:${port} via Worker`);
-        const wsUrl = `${config.WORKER_URL}?target=${addr}:${port}`;
+        const wsUrl = `${workerUrl}/?target=${addr}:${port}`;
         const ws = new WebSocket(wsUrl);
         const wsStream = createWebSocketStream(ws);
 

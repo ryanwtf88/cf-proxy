@@ -6,6 +6,7 @@ import { createWebSocketStream } from 'ws';
 
 export function handleHttpProxy(socket: Socket, data: Buffer) {
     const dataStr = data.toString();
+    const workerUrl = config.WORKER_URL ? config.WORKER_URL.replace(/\/$/, '') : null;
     // We only support CONNECT for now for HTTPS tunneling
     // For plain HTTP proxying, we would need to parse the method and URL.
     // Given the "VPN" requirement, CONNECT is what makes it behave most like a transparent tunnel for browsers.
@@ -40,9 +41,9 @@ export function handleHttpProxy(socket: Socket, data: Buffer) {
             }
         }
 
-        if (config.WORKER_URL) {
+        if (workerUrl) {
             console.log(`[HTTP] Tunneling to ${host}:${port} via Worker`);
-            const wsUrl = `${config.WORKER_URL}?target=${host}:${port}`;
+            const wsUrl = `${workerUrl}/?target=${host}:${port}`;
             const ws = new WebSocket(wsUrl);
             const wsStream = createWebSocketStream(ws);
 
@@ -84,15 +85,14 @@ export function handleHttpProxy(socket: Socket, data: Buffer) {
 
             console.log(`[HTTP] Proxying ${method} ${url}`);
 
-            if (config.WORKER_URL) {
+            if (workerUrl) {
                 console.log(`[HTTP] Tunneling to ${host}:${port} via Worker`);
-                const wsUrl = `${config.WORKER_URL}?target=${host}:${port}`;
+                const wsUrl = `${workerUrl}/?target=${host}:${port}`;
                 const ws = new WebSocket(wsUrl);
                 const wsStream = createWebSocketStream(ws);
 
                 ws.on('open', () => {
                     // We don't need to write 'Connection Established' for standard HTTP proxy
-                    // just pipe the request data
                     wsStream.write(data);
                     wsStream.pipe(socket);
                     socket.pipe(wsStream);
